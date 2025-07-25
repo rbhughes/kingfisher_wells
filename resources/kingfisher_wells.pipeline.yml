@@ -1,0 +1,14 @@
+# The main pipeline for kingfisher_wells
+resources:
+  pipelines:
+    kingfisher_wells_pipeline:
+      name: kingfisher_wells_pipeline
+      catalog: geodata
+      schema: kingfisher_wells_${bundle.target}
+      serverless: true
+      libraries:
+        - notebook:
+            path: ../src/dlt_pipeline.ipynb
+
+      configuration:
+        bundle.sourcePath: ${workspace.file_path}/src
