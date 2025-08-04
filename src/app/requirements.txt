@@ -1,3 +1,8 @@
 databricks-sdk
+databricks-sql-connector
 pytest
 streamlit
+pandas
+streamlit-folium
+folium
+shapely
