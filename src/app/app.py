@@ -1,7 +1,16 @@
 import streamlit as st
 from databricks.sdk import WorkspaceClient
 
+import duckdb
+
 w = WorkspaceClient()
+
+
+def test_db():
+    parq_path = "/Users/bryan/dev/kingfisher_wells/src/well_surface_locations/"
+    parq_path += "part-00000-tid-7502051727140489421-55d6fc8a-bdbb-40db-8cda-bf1cf862ebe2-0-1.c000.snappy.parquet"
+    df = duckdb.sql(f"select * from '{parq_path}'").df()
+    st.text(df.describe())
 
 
 @st.cache_data
@@ -43,6 +52,8 @@ job_ids = get_job_ids()
 
 # UI
 st.title("Databricks Job Trigger")
+
+test_db()
 
 if job_ids:
     col1, col2 = st.columns(2)
