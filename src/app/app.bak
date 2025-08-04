@@ -1,62 +1,16 @@
 import streamlit as st
-import pandas as pd
-from shapely import wkt
-
-# --- Use st-folium for mapping ---
 from streamlit_folium import st_folium
 import folium
+import pandas as pd
+import duckdb
+from shapely import wkt
 
-# --- Data source switch ---
-st.set_page_config(layout="wide")
-st.header("Kingfisher County Well Location Variance")
+parq_path = "/Users/bryan/dev/kingfisher_wells/src/well_surface_locations/"
+parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
+df = duckdb.sql(f"select * from '{parq_path}'").df()
 
-st.markdown(
-    f"""
-    ### Do the Latitude/Longitude locations for the same wells match among vendors?
-    **_Mostly!_** The surface location for wells present from all three sources (
-    [S&amp;P Global](https://www.spglobal.com/commodity-insights/en/products-solutions/upstream-midstream-oil-gas),
-    [Enverus](https://www.enverus.com/products/enverus-core/),
-    and [Oklahoma Corporation Commission](https://gisdata-occokc.opendata.arcgis.com/)
-    ) as of July 2025 are mapped below.
-    Datums are normalized to WGS84, and we skipped wells where any Lat/Lon was null.
-    Setting a lower Distance threshold will reveal less extreme variation but may degrade performance.
-    Use the API filter to limit by API number (`35073...`).
-    """
-)
 
-st.divider()
-st.sidebar.header("Data Source")
-USE_DATABRICKS = st.sidebar.checkbox("Run in Databricks Mode", value=False)
-
-if USE_DATABRICKS:
-    # Databricks SQL connector
-    from databricks import sql
-    from databricks.sdk.core import Config
-
-    # Hardcoded table info
-    TABLE_NAME = "geodata.gold.well_surface_locations"
-    cfg = Config()
-
-    @st.cache_resource
-    def get_connection():
-        return sql.connect(
-            server_hostname=cfg.host,
-            http_path=cfg.http_path,
-            credentials_provider=lambda: cfg.authenticate,
-        )
-
-    conn = get_connection()
-    with conn.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM {TABLE_NAME}")
-        df = cursor.fetchall_arrow().to_pandas()
-else:
-    import duckdb
-
-    parq_path = "/Users/bryan/dev/kingfisher_wells/src/well_surface_locations/"
-    parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
-    df = duckdb.sql(f"select * from '{parq_path}'").df()
-
-# --- Filter for only those wells with all three vendor geoms ---
+# Keep only groups where all three geom columns are present (not null)
 df = df.groupby("uwi_10").filter(
     lambda g: g["geom_ENV"].notnull().all()
     and g["geom_OCC"].notnull().all()
@@ -65,28 +19,52 @@ df = df.groupby("uwi_10").filter(
 
 TOTAL_WELLS = len(df)
 
+st.set_page_config(layout="wide")
+st.header("Kingfisher County Well Location Variance")
 st.markdown(
     f"""
-    #### {len(df)} well surface "triplets" in the dataset.
-    _At least 3% of wells in Kingfisher county disagree on their surface plot by over 500 meters._
-    """
-)
+    ### Do the Latitude/Longitude locations for the same wells match among vendors? **_Mostly!_**
+    
+    The surface location for wells present from all three sources (
+    [S&P Global](https://www.spglobal.com/commodity-insights/en/products-solutions/upstream-midstream-oil-gas), 
+    [Enverus](https://www.enverus.com/products/enverus-core/), and
+    [Oklahoma Corporation Commission](https://gisdata-occokc.opendata.arcgis.com/)
+    ) as of July 2025 are mapped below.
+    
+    Datums are normalized to WGS84, and we skipped wells where any Lat/Lon was 
+    null. Setting a lower Distance threshold will reveal less extreme 
+    variation but may degrade performance. Use the API filter to limit by
+    API number (`35073...`).
 
-# --- UI controls: side by side ---
+    #### {len(df)} well surface "triplets" in the dataset.
+
+    I'll leave conclusions to the user, but _at least 3% of the wells in
+    Kingfisher county disagree on their surface plot by over 500 meters_. 
+    There are a few cases with an obvious culprit like a positive longitude 
+    (3507324560) or probable county name typos. However, over 200 wells are 
+    seriously "misplaced" in one or more of these vendor databases.
+    """,
+    unsafe_allow_html=True,  # Not required for standard Markdown links, but harmless
+)
+st.divider()
+
 col1, col2 = st.columns([1, 2])
+
 with col1:
     threshold_str = st.text_input(
         "Distance threshold (meters):", value="500", key="threshold"
     )
+
 with col2:
     filter_text = st.text_input(
         "Filter by 10-digit API# (35073...):",
         value="",
         key="apifilter",
         placeholder="Enter API# prefix",
+        label_visibility="visible",
     )
 
-# --- Validate threshold input ---
+# --- Validate Distance Threshold input ---
 error_msg = ""
 try:
     DISTANCE_THRESHOLD = float(threshold_str)
@@ -106,6 +84,7 @@ df_extremes = df[
     | (df["distance_env_sp"] > DISTANCE_THRESHOLD)
     | (df["distance_occ_sp"] > DISTANCE_THRESHOLD)
 ]
+
 df_top = df_extremes.copy()
 
 # --- Filter by uwi_10 ---
@@ -115,8 +94,10 @@ if filter_text:
 else:
     filtered_df = df_top
 
+
 label_map = {"geom_OCC": "OCC", "geom_ENV": "Enverus", "geom_SP": "S&P Global"}
 color_map = {"OCC": "blue", "Enverus": "red", "S&P Global": "orange"}
+
 rows = []
 for _, row in filtered_df.iterrows():
     for col in ["geom_ENV", "geom_OCC", "geom_SP"]:
@@ -143,38 +124,45 @@ if rows:
 else:
     CENTER_LAT, CENTER_LON = 36.0, -97.7
 
-map_col, legend_col = st.columns([4, 1])
+map_col, legend_col = st.columns([4, 1])  # Adjust proportions as needed
+
+
 with map_col:
     m = folium.Map(location=[CENTER_LAT, CENTER_LON], zoom_start=10)
     groups = {}
     for label in color_map:
         groups[label] = folium.FeatureGroup(name=label, show=True)
         m.add_child(groups[label])
+
     for r in rows:
         folium.CircleMarker(
             location=[r["lat"], r["lon"]],
             radius=7,
             color=color_map.get(r["label"], "gray"),
-            opacity=0.5,
+            opacity=0.5,  # 50% line opacity
             fill=True,
             fill_color=color_map.get(r["label"], "gray"),
-            fill_opacity=0.5,
+            fill_opacity=0.5,  # 50% fill opacity
             popup=f"{r['uwi_10']} ({r['label']})",
         ).add_to(groups[r["label"]])
+
     folium.LayerControl(collapsed=False).add_to(m)
     st_folium(m, width=1100, height=520)
 
 with legend_col:
+    # --- hacky legend
     st.markdown(
         """
-        <div style='padding:10px;margin-top:15px;border:2px solid #eee;background:white;width:160px;'>
-          <b>Legend</b><br>
-          <span style='display:inline-block;width:12px;height:12px;background:blue;border-radius:50%;margin-right:6px'></span> OCC<br>
-          <span style='display:inline-block;width:12px;height:12px;background:red;border-radius:50%;margin-right:6px'></span> Enverus<br>
-          <span style='display:inline-block;width:12px;height:12px;background:orange;border-radius:50%;margin-right:6px'></span> S&amp;P Global
+        <div style='padding:10px;margin-bottom:15px;border:2px solid #eee;background:white;width:230px;'>
+        <span style='display:inline-block;width:12px;height:12px;background:blue;border-radius:50%;margin-right:6px'></span> OCC<br>
+        <span style='display:inline-block;width:12px;height:12px;background:red;border-radius:50%;margin-right:6px'></span> Enverus<br>
+        <span style='display:inline-block;width:12px;height:12px;background:orange;border-radius:50%;margin-right:6px'></span> S&amp;P Global
         </div>
         """,
         unsafe_allow_html=True,
     )
+    st.subheader(f"Distance Filter: {len(df_top)}")
+    st.subheader(f"API Filter: {len(filtered_df)}")
+    st.subheader(f"{round(len(filtered_df) / TOTAL_WELLS, 2) * 100}% selected")
 
 st.dataframe(filtered_df.drop(columns=["uwi_10_str"]))
