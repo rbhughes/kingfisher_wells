@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 from shapely import wkt
@@ -6,7 +7,7 @@ from streamlit_folium import st_folium
 import folium
 
 st.set_page_config(layout="wide")
-st.header("Kingfisher County Well Location Variance")
+st.title("Kingfisher County Well Location Variance")
 
 st.markdown(
     """
@@ -74,9 +75,17 @@ if USE_DATABRICKS:
 else:
     import duckdb
 
-    parq_path = "/Users/bryan/dev/kingfisher_wells/src/well_surface_locations/"
-    parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
-    df = duckdb.sql(f"select * from '{parq_path}'").df()
+    app_dir = Path(__file__).parent
+
+    sample_data_path = (
+        app_dir.parent.parent
+        / "sample_data"
+        / "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
+    )
+
+    # parq_path = "../../sample_data/"
+    # parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
+    df = duckdb.sql(f"select * from '{sample_data_path}'").df()
 
 # --- The rest of your code for filtering, mapping, Streamlit UI, etc. stays the same ---
 
