@@ -35,14 +35,14 @@ if USE_DATABRICKS:
     host = os.getenv("DATABRICKS_HOST")
     token = os.getenv("DATABRICKS_TOKEN")
 
-    # Establish session to the cluster
     session = DatabricksSession.builder.remote(
         host=host, token=token, cluster_id=cluster_id
     ).getOrCreate()
 
-    # query = f"SELECT * FROM {TABLE_NAME}"
     """
+    # ! NOPE: query = f"SELECT * FROM {TABLE_NAME}"
     We have to cast geom types in Databricks here. Why?
+
 
     Databricks Connect (with Spark Connect, as required by Databricks for 
     Python code in 2025) does not support serializing spatial/geography 
@@ -83,11 +83,8 @@ else:
         / "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
     )
 
-    # parq_path = "../../sample_data/"
-    # parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
     df = duckdb.sql(f"select * from '{sample_data_path}'").df()
 
-# --- The rest of your code for filtering, mapping, Streamlit UI, etc. stays the same ---
 
 # Filter for only those wells with all three vendor geoms
 df = df.groupby("uwi_10").filter(
