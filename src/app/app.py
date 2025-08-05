@@ -1,17 +1,15 @@
+import os
 import streamlit as st
 import pandas as pd
 from shapely import wkt
-
-# --- Use st-folium for mapping ---
 from streamlit_folium import st_folium
 import folium
 
-# --- Data source switch ---
 st.set_page_config(layout="wide")
 st.header("Kingfisher County Well Location Variance")
 
 st.markdown(
-    f"""
+    """
     ### Do the Latitude/Longitude locations for the same wells match among vendors?
     **_Mostly!_** The surface location for wells present from all three sources (
     [S&amp;P Global](https://www.spglobal.com/commodity-insights/en/products-solutions/upstream-midstream-oil-gas),
@@ -29,26 +27,50 @@ st.sidebar.header("Data Source")
 USE_DATABRICKS = st.sidebar.checkbox("Run in Databricks Mode", value=False)
 
 if USE_DATABRICKS:
-    # Databricks SQL connector
-    from databricks import sql
-    from databricks.sdk.core import Config
+    from databricks.connect import DatabricksSession
 
-    # Hardcoded table info
     TABLE_NAME = "geodata.gold.well_surface_locations"
-    cfg = Config()
+    cluster_id = os.getenv("DATABRICKS_CLUSTER_ID")
+    host = os.getenv("DATABRICKS_HOST")
+    token = os.getenv("DATABRICKS_TOKEN")
 
-    @st.cache_resource
-    def get_connection():
-        return sql.connect(
-            server_hostname=cfg.host,
-            http_path=cfg.http_path,
-            credentials_provider=lambda: cfg.authenticate,
-        )
+    # Establish session to the cluster
+    session = DatabricksSession.builder.remote(
+        host=host, token=token, cluster_id=cluster_id
+    ).getOrCreate()
 
-    conn = get_connection()
-    with conn.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM {TABLE_NAME}")
-        df = cursor.fetchall_arrow().to_pandas()
+    # query = f"SELECT * FROM {TABLE_NAME}"
+    """
+    We have to cast geom types in Databricks here. Why?
+
+    Databricks Connect (with Spark Connect, as required by Databricks for 
+    Python code in 2025) does not support serializing spatial/geography 
+    columns (like geometry, geography, or UDTs from the spark-geospatial 
+    library) to Pandas via .toPandas().
+
+    In Databricks Notebook UX, these types are rendered using internal JVM 
+    bridges, but Spark Connect uses gRPC and cannot serialize these JVM-side 
+    objects for local Python clients.
+
+    When reading from duckdb/parquet locally in Streamlit, all columns are 
+    deserialized as strings or binary, which pandas/shapely can handle—thus, 
+    no problem.
+    """
+
+    query = f"""
+    SELECT
+    uwi_10,
+    well_name_ENV,
+    distance_env_occ,
+    distance_env_sp,
+    distance_occ_sp,
+    ST_AsText(geom_ENV) AS geom_ENV,
+    ST_AsText(geom_OCC) AS geom_OCC,
+    ST_AsText(geom_SP)  AS geom_SP
+    FROM {TABLE_NAME}
+    """
+    df = session.sql(query).toPandas()
+
 else:
     import duckdb
 
@@ -56,7 +78,9 @@ else:
     parq_path += "part-00000-tid-2056548461317784044-e39174f2-0e34-468b-aec7-a12cdc7a95f0-16-1.c000.snappy.parquet"
     df = duckdb.sql(f"select * from '{parq_path}'").df()
 
-# --- Filter for only those wells with all three vendor geoms ---
+# --- The rest of your code for filtering, mapping, Streamlit UI, etc. stays the same ---
+
+# Filter for only those wells with all three vendor geoms
 df = df.groupby("uwi_10").filter(
     lambda g: g["geom_ENV"].notnull().all()
     and g["geom_OCC"].notnull().all()
