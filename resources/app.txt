@@ -1,9 +1,0 @@
-resources:
-  apps:
-    kingfisher-wells:
-      name: kingfisher-wells
-      source_code_path: ../src/app
-      description: "A Streamlit app to compare wells from different vendors"
-      permissions:
-        - level: CAN_MANAGE
-          service_principal_name: 2c2fe060-75ec-44ba-a7a7-a1d20695d698
