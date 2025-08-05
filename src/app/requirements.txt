@@ -1,5 +1,5 @@
 databricks-sdk
-databricks-sql-connector
+databricks-connect
 pytest
 streamlit
 pandas

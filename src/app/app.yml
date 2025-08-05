@@ -2,3 +2,10 @@ command:
   - streamlit
   - run
   - app.py
+env:
+  - name: DATABRICKS_HOST
+    value: https://dbc-6841fdbc-f68b.cloud.databricks.com
+  - name: DATABRICKS_TOKEN
+    valueFrom: streamlit-app
+  - name: DATABRICKS_CLUSTER_ID
+    value: 0724-164325-jc3o20pd
