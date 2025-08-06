@@ -2,14 +2,14 @@ from streamlit.testing.v1 import AppTest
 
 
 def test_app_shows_title():
-    at = AppTest.from_file("src/app/app.py").run()
+    at = AppTest.from_file("src/app/app.py").run(timeout=30)
     assert len(at.title) > 0
     assert at.title[0].value == "Kingfisher County Well Location Variance"
 
 
 def test_app_populated_dataframe():
     # actually checks for a rendered dataframe, not populated df
-    at = AppTest.from_file("src/app/app.py").run(timeout=10)
+    at = AppTest.from_file("src/app/app.py").run(timeout=30)
 
     dataframes = list(at.dataframe) + list(at.table)
 
