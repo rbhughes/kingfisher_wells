@@ -44,4 +44,6 @@ In no particular order, here are some tips about this process that are valid as 
 
 - Using 17.1-beta exceeded the supported versions of databricks-connect, which meant I could not take advantage of vscode integration. 😑
 
--
+- Performance on the compute cluster was surprisingly bad. We are dealing with fewer than 30K rows with the simplest of all POINT geometries. The ideal scenario (duckdb + local parquet) is quite snappy. I'll investigate performance improvements later. ![Cluster](images/cluster.png "17.1-beta Cluster")
+
+- Normal workflows would leverage the lower costs of a serverless SQL Warehouse to access the Delta table. However, SQL Warehouse (neither pro nor legacy) did not spatial functions, so I had to attach the bundled app to my 17.1-beta cluster. Ouch.
