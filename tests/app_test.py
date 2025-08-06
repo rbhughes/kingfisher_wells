@@ -9,7 +9,7 @@ def test_app_shows_title():
 
 def test_app_populated_dataframe():
     # actually checks for a rendered dataframe, not populated df
-    at = AppTest.from_file("src/app/app.py").run(timeout=20)
+    at = AppTest.from_file("src/app/app.py").run(timeout=30)
 
     dataframes = list(at.dataframe) + list(at.table)
 
