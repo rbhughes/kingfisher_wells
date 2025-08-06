@@ -9,6 +9,16 @@ import folium
 st.set_page_config(layout="wide")
 st.title("Kingfisher County Well Location Variance")
 
+# --- Auto mode detection (no sidebar!) ---
+if os.getenv("DATABRICKS_HOST"):
+    MODE = "Databricks"
+else:
+    MODE = "Local"
+
+st.subheader(
+    f"Data Source: {'Databricks (cluster)' if MODE == 'Databricks' else 'Local Parquet'}"
+)
+
 st.markdown(
     """
     ### Do the Latitude/Longitude locations for the same wells match among vendors?
@@ -24,10 +34,8 @@ st.markdown(
 )
 
 st.divider()
-st.sidebar.header("Data Source")
-USE_DATABRICKS = st.sidebar.checkbox("Run in Databricks Mode", value=False)
 
-if USE_DATABRICKS:
+if MODE == "Databricks":
     from databricks.connect import DatabricksSession
 
     TABLE_NAME = "geodata.gold.well_surface_locations"
@@ -38,25 +46,6 @@ if USE_DATABRICKS:
     session = DatabricksSession.builder.remote(
         host=host, token=token, cluster_id=cluster_id
     ).getOrCreate()
-
-    """
-    # ! NOPE: query = f"SELECT * FROM {TABLE_NAME}"
-    We have to cast geom types in Databricks here. Why?
-
-
-    Databricks Connect (with Spark Connect, as required by Databricks for 
-    Python code in 2025) does not support serializing spatial/geography 
-    columns (like geometry, geography, or UDTs from the spark-geospatial 
-    library) to Pandas via .toPandas().
-
-    In Databricks Notebook UX, these types are rendered using internal JVM 
-    bridges, but Spark Connect uses gRPC and cannot serialize these JVM-side 
-    objects for local Python clients.
-
-    When reading from duckdb/parquet locally in Streamlit, all columns are 
-    deserialized as strings or binary, which pandas/shapely can handle—thus, 
-    no problem.
-    """
 
     query = f"""
     SELECT
@@ -85,7 +74,6 @@ else:
 
     df = duckdb.sql(f"select * from '{sample_data_path}'").df()
 
-
 # Filter for only those wells with all three vendor geoms
 df = df.groupby("uwi_10").filter(
     lambda g: g["geom_ENV"].notnull().all()
@@ -102,7 +90,7 @@ st.markdown(
     """
 )
 
-# --- UI controls: side by side ---
+# --- UI controls: side by side (no sidebar) ---
 col1, col2 = st.columns([1, 2])
 with col1:
     threshold_str = st.text_input(
@@ -206,5 +194,9 @@ with legend_col:
         """,
         unsafe_allow_html=True,
     )
+    filtered_count = len(filtered_df)
+    filtered_percent = round((filtered_count / TOTAL_WELLS) * 100, 2)
+    st.subheader(f"{filtered_count} unique wells")
+    st.subheader(f"~{filtered_percent}%")
 
 st.dataframe(filtered_df.drop(columns=["uwi_10_str"]))
