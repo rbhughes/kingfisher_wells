@@ -16,14 +16,19 @@ jobs:
       - name: Set up Databricks CLI
         uses: databricks/setup-cli@main
 
-      - name: Deploy Databricks Asset Bundle (Streamlit app)
-        run: databricks bundle deploy
+      - name: Deploy Databricks Asset Bundle
+        run: databricks bundle deploy -t ${{ secrets.DEPLOY_TARGET}}
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
 
-      # --- TRIGGER YOUR EXISTING JOB BY NAME ---
-      # Get Job ID from the name if needed
+      - name: Deploy Streamlit App
+        run: databricks apps deploy kingfisher-streamlit-app
+          --source-code-path /Workspace/Users/${{ secrets.DATABRICKS_USER }}/.bundle/kingfisher-wells-streamlit/${{ env.DEPLOY_TARGET }}/files/src/app
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
       - name: Get job ID for kingfisher_wells_full_medallion
         id: jobid
         run: |
