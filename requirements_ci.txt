@@ -1,3 +1,4 @@
+duckdb
 pytest
 streamlit
 streamlit-folium
