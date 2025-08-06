@@ -1,0 +1,40 @@
+name: Deploy Bundle & Run Databricks Job
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  deploy-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy Databricks Asset Bundle (Streamlit app)
+        run: databricks bundle deploy
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+      # --- TRIGGER YOUR EXISTING JOB BY NAME ---
+      # Get Job ID from the name if needed
+      - name: Get job ID for kingfisher_wells_full_medallion
+        id: jobid
+        run: |
+          job_id=$(databricks jobs list --output json | jq -r '.[] | select(.settings.name=="kingfisher_wells_full_medallion") | .job_id')
+          echo "job_id=$job_id" >> $GITHUB_OUTPUT
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+      - name: Run Databricks Job (kingfisher_wells_full_medallion)
+        run: databricks jobs run-now --job-id ${{ steps.jobid.outputs.job_id }}
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
