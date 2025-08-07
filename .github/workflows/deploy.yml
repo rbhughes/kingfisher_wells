@@ -2,12 +2,25 @@ name: Deploy Bundle & Run Databricks Job
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: Pick dev or prod target
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
   release:
     types: [published]
 
 jobs:
   deploy-and-run:
     runs-on: ubuntu-latest
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      DATABRICKS_USER: ${{ secrets.DATABRICKS_USER }}
 
     steps:
       - name: Check out repository
@@ -17,24 +30,30 @@ jobs:
         uses: databricks/setup-cli@main
 
       - name: Deploy Databricks Asset Bundle (Streamlit app)
-        run: databricks bundle deploy
+        run: databricks bundle deploy -t ${{ github.event.inputs.deploy_target || 'dev' }}
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ env.DATABRICKS_TOKEN }}
 
-      # --- TRIGGER YOUR EXISTING JOB BY NAME ---
-      # Get Job ID from the name if needed
+      - name: Deploy Databricks Streamlit App Resource
+        run: >
+          databricks apps deploy kingfisher-streamlit-app-${{ github.event.inputs.deploy_target || 'dev' }}
+          --source-code-path /Workspace/Users/${{ env.DATABRICKS_USER }}/.bundle/kingfisher-wells-streamlit/${{ github.event.inputs.deploy_target || 'dev' }}/files/src/app
+        env:
+          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ env.DATABRICKS_TOKEN }}
+
       - name: Get job ID for kingfisher_wells_full_medallion
         id: jobid
         run: |
           job_id=$(databricks jobs list --output json | jq -r '.[] | select(.settings.name=="kingfisher_wells_full_medallion") | .job_id')
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ env.DATABRICKS_TOKEN }}
 
       - name: Run Databricks Job (kingfisher_wells_full_medallion)
         run: databricks jobs run-now ${{ steps.jobid.outputs.job_id }}
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ env.DATABRICKS_TOKEN }}
