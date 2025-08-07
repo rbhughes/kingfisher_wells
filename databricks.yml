@@ -4,9 +4,9 @@ bundle:
 resources:
   apps:
     kingfisher_streamlit_app:
-      name: kingfisher-streamlit-app
+      name: kingfisher-streamlit-app-${bundle.target}
       source_code_path: src/app
-      description: "Kingfisher County surface well comparison app (Streamlit)"
+      description: "Kingfisher County surface well comparison app (Streamlit ${bundle.target})"
 
 targets:
   dev:
