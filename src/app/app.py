@@ -90,7 +90,6 @@ st.markdown(
     """
 )
 
-# --- UI controls: side by side (no sidebar) ---
 col1, col2 = st.columns([1, 2])
 with col1:
     threshold_str = st.text_input(
