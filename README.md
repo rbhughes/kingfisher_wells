@@ -1,5 +1,14 @@
 # Kingfisher Wells: A Databricks Asset Bundle Experiment
 
+> **Now live at [kingfisher.purr.io](https://kingfisher.purr.io)** — the
+> July 2025 snapshot served as a static site (Astro + MapLibre in
+> `site/`), replacing the Streamlit app now that the Databricks
+> workspace is gone. The dataset is frozen; a
+> [sanity check](tests/test_snapshot_integrity.py) verifies the
+> committed parquet's stored distances against recomputed spheroid
+> distances (worst disagreement: ~5 microns). Everything below is the
+> original writeup, preserved as documentation of the experiment.
+
 ## Do the Lat/Lons from different vendors agree with each other?... **_Mostly!_**
 
 The surface location for wells present from three sources (
