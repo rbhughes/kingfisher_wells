@@ -328,7 +328,15 @@
   }
   .story figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
   .story .muted { color: var(--ink-2); }
-  footer { color: var(--muted); font-size: 0.8rem; padding: 0.8rem 2.1rem 1.2rem; }
+  footer {
+    border-top: 1px solid var(--hairline);
+    background: var(--surface);
+    padding: 1rem 2.1rem 1.4rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer p { max-width: 68rem; margin: 0.35rem auto; }
   .maplibregl-popup-content {
     font: 13px/1.45 system-ui, sans-serif;
     color: var(--ink);
