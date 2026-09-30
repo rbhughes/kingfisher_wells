@@ -211,7 +211,6 @@ __marimo__/
 
 *.egg-info
 scratch/**
-!scratch/README.md
 src/well_surface_locations/*
 # static site
 site/node_modules/
