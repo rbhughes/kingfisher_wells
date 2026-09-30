@@ -270,6 +270,13 @@ databricks tokens create --lifetime-seconds 63113904 --comment "kingfisher-deplo
 
 (Paste the token_value string as the secret)
 
+> **Note:** an earlier version of this README pasted a real `token_value` here
+> instead of a placeholder. It has been revoked and scrubbed from this repo's
+> history. The lesson is the boring one: never paste a live credential into a
+> tracked file, even a documentation example, even in a repo you believe is
+> throwaway. Create the token, paste the value straight into the secret store,
+> and redact before you ever commit.
+
 DATABRICKS_USER:
 
 `your_email@whatever.com`
