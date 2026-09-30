@@ -32,12 +32,8 @@ testpaths = [
     "tests",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/kingfisher_wells"]
-
-[project.scripts]
-main = "kingfisher_wells.main:main"
+# Not a distributable library: the code here is Databricks notebooks, a
+# Streamlit app and helper scripts under src/, none of it an importable
+# package. uv installs the dependencies without trying to build a wheel.
+[tool.uv]
+package = false
