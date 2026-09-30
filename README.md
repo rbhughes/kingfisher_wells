@@ -21,6 +21,32 @@ The purpose of this exercise was to learn and document my adventures with Databr
 
 ### Spoiler: ~3% of Lat/Lon points are "misplaced" by over _500 meters_ relative to each other. That's about 250 wells in a single county.
 
+## Data sources
+
+Three sources, one of them public.
+
+**[Oklahoma Corporation Commission](https://gisdata-occokc.opendata.arcgis.com/)** publishes
+its well data as open data. Its coordinates are reproduced here directly.
+
+**[Enverus](https://www.enverus.com/products/enverus-core/)** and
+**[S&amp;P Global](https://www.spglobal.com/commodity-insights/en/products-solutions/upstream-midstream-oil-gas)**
+are commercial products, and their datasets are not public. Neither dataset is reproduced
+here. What appears is the single thing the comparison requires: one surface coordinate per
+well, the distances between the three, and the well name. No production, no permits, no
+ownership, no completions, no vendor attributes of any kind -- nothing that substitutes for
+a subscription to either product.
+
+A wellhead coordinate is a measurement of where a hole meets the ground. It is a physical
+fact, not an authored work, and no vendor owns the location of a well in Kingfisher County.
+Demonstrating that two paid sources place the same well 500 metres apart requires printing
+both numbers. That is the whole finding, and there is no version of it that omits them.
+
+Which is the point. Enverus and S&amp;P are not free, and both are obliged to investigate
+reported data quality issues. The odds of all three sources being wrong in the same
+direction at the same moment are very low, so the disagreements here are informative rather
+than mysterious -- someone's coordinate is wrong, and the map shows which. If that leads to
+corrections, so much the better.
+
 ## Medallion Architecture
 
 We follow [Medallion Architecture](https://www.databricks.com/glossary/medallion-architecture) to collect and process the data.
