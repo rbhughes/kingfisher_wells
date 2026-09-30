@@ -2,6 +2,8 @@
 name = "kingfisher_wells"
 version = "0.0.1"
 authors = [{ name = "bryan@purr.io" }]
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">= 3.11"
 
 [project.optional-dependencies]
