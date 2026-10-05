@@ -1,4 +1,4 @@
-name: Streamlit App Tests
+name: Snapshot Integrity
 
 on:
   push:
@@ -15,4 +15,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements_ci.txt
-      - run: pytest
+      # Only the frozen-snapshot check. The Streamlit app under src/app is
+      # kept as part of the exhibit but is no longer built, tested or
+      # deployed by CI.
+      - run: pytest tests/test_snapshot_integrity.py

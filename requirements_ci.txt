@@ -1,6 +1,4 @@
 duckdb
 pytest
-streamlit
-streamlit-folium
 folium
 shapely
